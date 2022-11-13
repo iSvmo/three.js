@@ -14,6 +14,6 @@
     "pixelmatch": "^5.2.1",
     "puppeteer": "^13.1.2",
     "qunit": "^2.18.0",
-    "serve-handler": "^6.1.3"
+    "serve-handler": "^6.1.5"
   }
 }
