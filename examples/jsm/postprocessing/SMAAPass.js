@@ -1,4 +1,5 @@
 import {
+	HalfFloatType,
 	LinearFilter,
 	NearestFilter,
 	ShaderMaterial,
@@ -7,9 +8,7 @@ import {
 	WebGLRenderTarget
 } from 'three';
 import { Pass, FullScreenQuad } from './Pass.js';
-import { SMAAEdgesShader } from '../shaders/SMAAShader.js';
-import { SMAAWeightsShader } from '../shaders/SMAAShader.js';
-import { SMAABlendShader } from '../shaders/SMAAShader.js';
+import { SMAABlendShader, SMAAEdgesShader, SMAAWeightsShader } from '../shaders/SMAAShader.js';
 
 class SMAAPass extends Pass {
 
@@ -20,12 +19,14 @@ class SMAAPass extends Pass {
 		// render targets
 
 		this.edgesRT = new WebGLRenderTarget( width, height, {
-			depthBuffer: false
+			depthBuffer: false,
+			type: HalfFloatType
 		} );
 		this.edgesRT.texture.name = 'SMAAPass.edges';
 
 		this.weightsRT = new WebGLRenderTarget( width, height, {
-			depthBuffer: false
+			depthBuffer: false,
+			type: HalfFloatType
 		} );
 		this.weightsRT.texture.name = 'SMAAPass.weights';
 
@@ -67,12 +68,6 @@ class SMAAPass extends Pass {
 
 		// materials - pass 1
 
-		if ( SMAAEdgesShader === undefined ) {
-
-			console.error( 'THREE.SMAAPass relies on SMAAShader' );
-
-		}
-
 		this.uniformsEdges = UniformsUtils.clone( SMAAEdgesShader.uniforms );
 
 		this.uniformsEdges[ 'resolution' ].value.set( 1 / width, 1 / height );
@@ -112,8 +107,6 @@ class SMAAPass extends Pass {
 			vertexShader: SMAABlendShader.vertexShader,
 			fragmentShader: SMAABlendShader.fragmentShader
 		} );
-
-		this.needsSwap = false;
 
 		this.fsQuad = new FullScreenQuad( null );
 
@@ -180,6 +173,22 @@ class SMAAPass extends Pass {
 	getSearchTexture() {
 
 		return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEIAAAAhCAAAAABIXyLAAAAAOElEQVRIx2NgGAWjYBSMglEwEICREYRgFBZBqDCSLA2MGPUIVQETE9iNUAqLR5gIeoQKRgwXjwAAGn4AtaFeYLEAAAAASUVORK5CYII=';
+
+	}
+
+	dispose() {
+
+		this.edgesRT.dispose();
+		this.weightsRT.dispose();
+
+		this.areaTexture.dispose();
+		this.searchTexture.dispose();
+
+		this.materialEdges.dispose();
+		this.materialWeights.dispose();
+		this.materialBlend.dispose();
+
+		this.fsQuad.dispose();
 
 	}
 

@@ -1,12 +1,12 @@
 import path from 'path';
 import resolve from '@rollup/plugin-node-resolve';
 import filesize from 'rollup-plugin-filesize';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import { visualizer } from 'rollup-plugin-visualizer';
-import { glconstants, glsl } from '../utils/build/rollup.config';
+import { glsl } from '../utils/build/rollup.config.js';
 import chalk from 'chalk';
 
-const statsFile = path.resolve( __dirname, './treeshake/stats.html' );
+const statsFile = path.resolve( 'test/treeshake/stats.html' );
 
 function logStatsFile() {
 
@@ -27,7 +27,7 @@ export default [
 	{
 		input: 'test/treeshake/index.js',
 		plugins: [
-			resolve(),
+			resolve()
 		],
 		output: [
 			{
@@ -43,7 +43,7 @@ export default [
 			terser(),
 			filesize( {
 				showMinifiedSize: false,
-			} ),
+			} )
 		],
 		output: [
 			{
@@ -55,13 +55,12 @@ export default [
 	{
 		input: 'test/treeshake/index-src.js',
 		plugins: [
-			glconstants(),
 			glsl(),
 			terser(),
 			visualizer( {
 				filename: statsFile,
 			} ),
-			logStatsFile(),
+			logStatsFile()
 		],
 		output: [
 			{
@@ -70,4 +69,60 @@ export default [
 			}
 		]
 	},
+	{
+		input: 'test/treeshake/index.webgpu.js',
+		plugins: [
+			resolve()
+		],
+		output: [
+			{
+				format: 'esm',
+				file: 'test/treeshake/index.webgpu.bundle.js'
+			}
+		]
+	},
+	{
+		input: 'test/treeshake/index.webgpu.js',
+		plugins: [
+			resolve(),
+			terser(),
+			filesize( {
+				showMinifiedSize: false,
+			} )
+		],
+		output: [
+			{
+				format: 'esm',
+				file: 'test/treeshake/index.webgpu.bundle.min.js'
+			}
+		]
+	},
+	{
+		input: 'test/treeshake/index.webgpu.nodes.js',
+		plugins: [
+			resolve()
+		],
+		output: [
+			{
+				format: 'esm',
+				file: 'test/treeshake/index.webgpu.nodes.bundle.js'
+			}
+		]
+	},
+	{
+		input: 'test/treeshake/index.webgpu.nodes.js',
+		plugins: [
+			resolve(),
+			terser(),
+			filesize( {
+				showMinifiedSize: false,
+			} )
+		],
+		output: [
+			{
+				format: 'esm',
+				file: 'test/treeshake/index.webgpu.nodes.bundle.min.js'
+			}
+		]
+	}
 ];

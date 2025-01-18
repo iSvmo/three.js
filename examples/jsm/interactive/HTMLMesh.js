@@ -4,7 +4,7 @@ import {
 	Mesh,
 	MeshBasicMaterial,
 	PlaneGeometry,
-	sRGBEncoding,
+	SRGBColorSpace,
 	Color
 } from 'three';
 
@@ -37,6 +37,8 @@ class HTMLMesh extends Mesh {
 
 			material.map.dispose();
 
+			canvases.delete( dom );
+
 			this.removeEventListener( 'mousedown', onEvent );
 			this.removeEventListener( 'mousemove', onEvent );
 			this.removeEventListener( 'mouseup', onEvent );
@@ -57,9 +59,10 @@ class HTMLTexture extends CanvasTexture {
 		this.dom = dom;
 
 		this.anisotropy = 16;
-		this.encoding = sRGBEncoding;
+		this.colorSpace = SRGBColorSpace;
 		this.minFilter = LinearFilter;
 		this.magFilter = LinearFilter;
+		this.generateMipmaps = false;
 
 		// Create an observer on the DOM, and run html2canvas update in the next loop
 		const observer = new MutationObserver( () => {
@@ -239,6 +242,13 @@ function html2canvas( element ) {
 
 	function drawElement( element, style ) {
 
+		// Do not render invisible elements, comments and scripts.
+		if ( element.nodeType === Node.COMMENT_NODE || element.nodeName === 'SCRIPT' || ( element.style && element.style.display === 'none' ) ) {
+
+			return;
+
+		}
+
 		let x = 0, y = 0, width = 0, height = 0;
 
 		if ( element.nodeType === Node.TEXT_NODE ) {
@@ -256,24 +266,33 @@ function html2canvas( element ) {
 
 			drawText( style, x, y, element.nodeValue.trim() );
 
-		} else if ( element.nodeType === Node.COMMENT_NODE ) {
-
-			return;
-
 		} else if ( element instanceof HTMLCanvasElement ) {
 
 			// Canvas element
-			if ( element.style.display === 'none' ) return;
 
-			context.save();
+			const rect = element.getBoundingClientRect();
+
+			x = rect.left - offset.left - 0.5;
+			y = rect.top - offset.top - 0.5;
+
+		        context.save();
 			const dpr = window.devicePixelRatio;
 			context.scale( 1 / dpr, 1 / dpr );
-			context.drawImage( element, 0, 0 );
+			context.drawImage( element, x, y );
 			context.restore();
 
-		} else {
+		} else if ( element instanceof HTMLImageElement ) {
 
-			if ( element.style.display === 'none' ) return;
+			const rect = element.getBoundingClientRect();
+
+			x = rect.left - offset.left - 0.5;
+			y = rect.top - offset.top - 0.5;
+			width = rect.width;
+			height = rect.height;
+
+			context.drawImage( element, x, y, width, height );
+
+		} else {
 
 			const rect = element.getBoundingClientRect();
 
@@ -469,17 +488,14 @@ function html2canvas( element ) {
 
 	const offset = element.getBoundingClientRect();
 
-	let canvas;
+	let canvas = canvases.get( element );
 
-	if ( canvases.has( element ) ) {
-
-		canvas = canvases.get( element );
-
-	} else {
+	if ( canvas === undefined ) {
 
 		canvas = document.createElement( 'canvas' );
 		canvas.width = offset.width;
 		canvas.height = offset.height;
+		canvases.set( element, canvas );
 
 	}
 
@@ -488,6 +504,8 @@ function html2canvas( element ) {
 	const clipper = new Clipper( context );
 
 	// console.time( 'drawElement' );
+
+	context.clearRect( 0, 0, canvas.width, canvas.height );
 
 	drawElement( element );
 

@@ -5,7 +5,8 @@ import {
 	Mesh,
 	MeshBasicMaterial,
 	PlaneGeometry,
-	Texture
+	Texture,
+	SRGBColorSpace
 } from 'three';
 
 /**
@@ -67,7 +68,9 @@ class VolumeSlice {
 
 		const canvasMap = new Texture( this.canvas );
 		canvasMap.minFilter = LinearFilter;
+		canvasMap.generateMipmaps = false;
 		canvasMap.wrapS = canvasMap.wrapT = ClampToEdgeWrapping;
+		canvasMap.colorSpace = SRGBColorSpace;
 		const material = new MeshBasicMaterial( { map: canvasMap, side: DoubleSide, transparent: true } );
 		/**
 		 * @member {Mesh} mesh The mesh ready to get used in the scene
@@ -100,7 +103,7 @@ class VolumeSlice {
 	}
 
 	/**
-	 * @member {Function} repaint Refresh the texture and the geometry if geometryNeedsUpdate is set to true
+	 * Refresh the texture and the geometry if geometryNeedsUpdate is set to true
 	 * @memberof VolumeSlice
 	 */
 	repaint() {
@@ -186,7 +189,7 @@ class VolumeSlice {
 	}
 
 	/**
-	 * @member {Function} Refresh the geometry according to axis and index
+	 * Refresh the geometry according to axis and index
 	 * @see Volume.extractPerpendicularPlane
 	 * @memberof VolumeSlice
 	 */

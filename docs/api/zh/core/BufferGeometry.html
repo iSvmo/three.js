@@ -37,6 +37,30 @@
 		const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
 		const mesh = new THREE.Mesh( geometry, material );
 		</code>
+		
+		<h2>代码示例 (索引Index)</h2>
+
+		<code>
+		const geometry = new THREE.BufferGeometry();
+
+		const vertices = new Float32Array( [
+			-1.0, -1.0,  1.0, // v0
+			 1.0, -1.0,  1.0, // v1
+			 1.0,  1.0,  1.0, // v2
+			-1.0,  1.0,  1.0, // v3
+		] );
+
+		const indices = [
+			0, 1, 2,
+			2, 3, 0,
+		];
+
+		geometry.setIndex( indices );
+		geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+
+		const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+		const mesh = new THREE.Mesh( geometry, material );
+		</code>
 
 		<h2>例子</h2>
 		<p>
@@ -82,6 +106,8 @@
 			<code>
 				{ start: 0, count: Infinity }
 			</code>
+			对于非索引 BufferGeometry，count 是要渲染的顶点数。
+			对于索引 BufferGeometry，count 是要渲染的索引数。
 		</p>
 
 		<h3>[property:Array groups]</h3>
@@ -94,8 +120,8 @@
 			start 表明当前 draw call 中的没有索引的几何体的几何体的第一个顶点；或者第一个三角面片的索引。
 			count 指明当前分割包含多少顶点（或 indices）。
 			materialIndex 指出当前用到的材质队列的索引。<br /><br />
-
-			通过 [page:.addGroup] 来增加组，而不是直接更改当前队列。
+			通过 [page:.addGroup] 来增加组，而不是直接更改当前队列。<br /><br />
+			每个顶点和索引必须恰好属于一个组，不同组之间不得共享顶点或索引，并且不得留下未使用的顶点或索引。
 		</p>
 
 
@@ -125,19 +151,19 @@
 
 		<h3>[property:Boolean isBufferGeometry]</h3>
 		<p>
-			Read-only flag to check if a given object is of type [name].
+			用于判断对象是否为[name]的只读标记.
 		</p>
 
 		<h3>[property:Object morphAttributes]</h3>
 		<p>
-			存储 [page:BufferAttribute] 的 Hashmap，存储了几何体 morph targets 的细节信息。
+			存储 [page:BufferAttribute] 的 Hashmap，存储了几何体 morph targets 的细节信息。<br />
+			注意：当这个geometry渲染之后，morph attribute 数据无法更改。你需要调用[page:.dispose]()，并重新创建一个新的[name]实例。
 		</p>
 
 		<h3>[property:Boolean morphTargetsRelative]</h3>
 		<p>
-			Used to control the morph target behavior; when set to true, the morph target data is treated as relative offsets, rather than as absolute positions/normals.
-
-			Default is *false*.
+			用于控制morph target的行为，如果设置为 `true`，morph target数据作为相对的偏移量，而非绝对的位置/法向。
+			默认为*false*。
 		</p>
 
 		<h3>[property:String name]</h3>
@@ -159,55 +185,52 @@
 
 		<p>[page:EventDispatcher EventDispatcher] 在该类上可用的所有方法。</p>
 
-		<h3>[method:this setAttribute]( [param:String name], [param:BufferAttribute attribute] )</h3>
-		<p>
-			为当前几何体设置一个 attribute 属性。在类的内部，有一个存储 [page:.attributes] 的 hashmap，
-			通过该 hashmap，遍历 attributes 的速度会更快。而使用该方法，可以向 hashmap 内部增加 attribute。
-			所以，你需要使用该方法来添加 attributes。
-		</p>
-
 		<h3>[method:undefined addGroup]( [param:Integer start], [param:Integer count], [param:Integer materialIndex] )</h3>
 		<p>
 			为当前几何体增加一个 group，详见 [page:BufferGeometry.groups groups] 属性。
 		</p>
 
-
 		<h3>[method:this applyMatrix4]( [param:Matrix4 matrix] )</h3>
 		<p> 用给定矩阵转换几何体的顶点坐标。</p>
 
+		<h3>[method:this applyQuaternion]( [param:Quaternion quaternion] )</h3>
+		<p>用给四元数表示的旋转应用于几何体的顶点坐标。</p>
+
 		<h3>[method:this center] ()</h3>
 		<p>根据边界矩形将几何体居中。</p>
+		
+		<h3>[method:undefined clearGroups]( )</h3>
+		<p>清空所有的 groups。</p>
 
 		<h3>[method:BufferGeometry clone]()</h3>
 		<p>克隆当前的 BufferGeometry。</p>
 
-		<h3>[method:this copy]( [param:BufferGeometry bufferGeometry] )</h3>
-		<p>将参数指定的 BufferGeometry 的值拷贝到当前 BufferGeometry 中。</p>
-
-		<h3>[method:undefined clearGroups]( )</h3>
-		<p>清空所有的 groups。</p>
-
 		<h3>[method:undefined computeBoundingBox]()</h3>
 		<p>
-			计算当前几何体的的边界矩形，该操作会更新已有 [param:.boundingBox]。<br />
+			计算当前几何体的的边界矩形，该操作会更新已有 [page:.boundingBox]。<br />
 			边界矩形不会默认计算，需要调用该接口指定计算边界矩形，否则保持默认值 *null*。
 		</p>
 
 		<h3>[method:undefined computeBoundingSphere]()</h3>
 		<p>
-			计算当前几何体的的边界球形，该操作会更新已有 [param:.boundingSphere]。<br />
+			计算当前几何体的的边界球形，该操作会更新已有 [page:.boundingSphere]。<br />
 			边界球形不会默认计算，需要调用该接口指定计算边界球形，否则保持默认值 *null*。
 		</p>
 
 		<h3>[method:undefined computeTangents]()</h3>
 		<p>
-		Calculates and adds a tangent attribute to this geometry.<br />
-		The computation is only supported for indexed geometries and if position, normal, and uv attributes are defined. When using a tangent space normal map, prefer the MikkTSpace algorithm provided by
-		[page:BufferGeometryUtils.computeMikkTSpaceTangents] instead.
+		计算并向此geometry中添加tangent attribute。<br />
+		只支持索引化的几何体对象，并且必须拥有position(位置)，normal(法向)和 uv attributes。如果使用了切线空间法向贴图，最好使用 [page:BufferGeometryUtils.computeMikkTSpaceTangents] 中的MikkTSpace算法。
 		</p>
 
 		<h3>[method:undefined computeVertexNormals]()</h3>
-		<p>通过面片法向量的平均值计算每个顶点的法向量。</p>
+		<p>通过面片法向量的平均值计算每个顶点的法向量。对于索引几何体，该方法将每个顶点法线设置为共享该顶点的面的面法线的平均值。对于非索引几何体，顶点不共享，该方法将每个顶点法线设置为与面法线相同。</p>
+
+		<h3>[method:this copy]( [param:BufferGeometry bufferGeometry] )</h3>
+		<p>将参数指定的 BufferGeometry 的值拷贝到当前 BufferGeometry 中。</p>
+		
+		<h3>[method:BufferAttribute deleteAttribute]( [param:String name] )</h3>
+		<p>删除具有指定名称的 [page:BufferAttribute attribute]。</p>
 
 		<h3>[method:undefined dispose]()</h3>
 		<p>
@@ -222,7 +245,7 @@
 		<p>返回缓存相关的 [page:.index]。</p>
 
 		<h3>[method:Boolean hasAttribute]( [param:String name] )</h3>
-		<p>Returns *true* if the attribute with the specified name exists.</p>
+		<p>检查是否存在有指定名称的attribute，如果有返回*true*。</p>
 
 		<h3>[method:this lookAt] ( [param:Vector3 vector] )</h3>
 		<p>
@@ -231,16 +254,10 @@
 			旋转几何体朝向控件中的一点。该过程通常在一次处理中完成，不会循环处理。典型的用法是过通过调用 [page:Object3D.lookAt] 实时改变 mesh 朝向。
 		</p>
 
-		<h3>[method:this merge]( [param:BufferGeometry bufferGeometry], [param:Integer offset] )</h3>
-		<p>同参数指定的 BufferGeometry 进行合并。可以通过可选参数指定，从哪个偏移位置开始进行 merge。</p>
-
 		<h3>[method:undefined normalizeNormals]()</h3>
 		<p>
 			几何体中的每个法向量长度将会为 1。这样操作会更正光线在表面的效果。
 		</p>
-
-		<h3>[method:BufferAttribute deleteAttribute]( [param:String name] )</h3>
-		<p>删除具有指定名称的 [page:BufferAttribute attribute]。</p>
 
 		<h3>[method:this rotateX] ( [param:Float radians] )</h3>
 		<p>
@@ -262,24 +279,30 @@
 			缩放几何体。该操作一般在一次处理中完成，不会循环处理。典型的用法是通过调用 [page:Object3D.scale] 实时旋转几何体。
 		</p>
 
+		<h3>[method:this setAttribute]( [param:String name], [param:BufferAttribute attribute] )</h3>
+		<p>
+			为当前几何体设置一个 attribute 属性。在类的内部，有一个存储 [page:.attributes] 的 hashmap，
+			通过该 hashmap，遍历 attributes 的速度会更快。
+		</p>
+
+		<h3>[method:undefined setDrawRange] ( [param:Integer start], [param:Integer count] )</h3>
+		<p>设置 [page:.drawRange] 属性。对于非索引 BufferGeometry，count 是要渲染的顶点数。对于索引 BufferGeometry，count 是要渲染的索引数。</p>
+
+		<h3>[method:this setFromPoints] ( [param:Array points] )</h3>
+		<p>通过基于给定的 points 设置几何图形的位置属性。该数组可以保存 Vector2 或 Vector3 的实例。使用二维数据时，所有顶点的 z 坐标均设置为 0。如果该方法与现有位置属性一起使用，则顶点数据将被数组中的数据覆盖。数组的长度必须与顶点数匹配。</p>
+
 		<h3>[method:this setIndex] ( [param:BufferAttribute index] )</h3>
 		<p>设置缓存的 [page:.index]。</p>
 
-		<h3>[method:undefined setDrawRange] ( [param:Integer start], [param:Integer count] )</h3>
-		<p>设置缓存的 [page:.drawRange]。详见相关属性说明。</p>
-
-		<h3>[method:this setFromPoints] ( [param:Array points] )</h3>
-		<p>通过点队列设置该 BufferGeometry 的 attribute。</p>
-
 		<h3>[method:Object toJSON]()</h3>
-		<p>返回代表该 BufferGeometry 的 JSON 对象。</p>
+		<p>返回代表该 BufferGeometry 符合 [link:https://github.com/mrdoob/three.js/wiki/JSON-Object-Scene-format-4 Object/Scene 规范] 的 JSON 对象。</p>
 
 		<h3>[method:BufferGeometry toNonIndexed]()</h3>
 		<p>返回已索引的 BufferGeometry 的非索引版本。</p>
 
 		<h3>[method:this translate] ( [param:Float x], [param:Float y], [param:Float z] )</h3>
 		<p>
-			移动几何体。该操作一般在一次处理中完成，不会循环处理。典型的用法是通过调用 [page:Object3D.rotation] 实时旋转几何体。
+			移动几何体。该操作一般在一次处理中完成，不会循环处理。典型的用法是通过调用 [page:Object3D.position] 实时移动几何体。
 		</p>
 
 		<h2>Source</h2>

@@ -5,6 +5,7 @@ import {
 	BufferGeometry,
 	ClampToEdgeWrapping,
 	Color,
+	ColorManagement,
 	ConeGeometry,
 	CylinderGeometry,
 	DataTexture,
@@ -28,6 +29,7 @@ import {
 	Scene,
 	ShapeUtils,
 	SphereGeometry,
+	SRGBColorSpace,
 	TextureLoader,
 	Vector2,
 	Vector3
@@ -40,14 +42,6 @@ class VRMLLoader extends Loader {
 	constructor( manager ) {
 
 		super( manager );
-
-		// dependency check
-
-		if ( typeof chevrotain === 'undefined' ) { // eslint-disable-line no-undef
-
-			throw Error( 'THREE.VRMLLoader: External library chevrotain.min.js required.' );
-
-		}
 
 	}
 
@@ -128,12 +122,12 @@ class VRMLLoader extends Loader {
 
 		function createTokens() {
 
-			const createToken = chevrotain.createToken; // eslint-disable-line no-undef
+			const createToken = chevrotain.createToken;
 
 			// from http://gun.teipir.gr/VRML-amgem/spec/part1/concepts.html#SyntaxBasics
 
 			const RouteIdentifier = createToken( { name: 'RouteIdentifier', pattern: /[^\x30-\x39\0-\x20\x22\x27\x23\x2b\x2c\x2d\x2e\x5b\x5d\x5c\x7b\x7d][^\0-\x20\x22\x27\x23\x2b\x2c\x2d\x2e\x5b\x5d\x5c\x7b\x7d]*[\.][^\x30-\x39\0-\x20\x22\x27\x23\x2b\x2c\x2d\x2e\x5b\x5d\x5c\x7b\x7d][^\0-\x20\x22\x27\x23\x2b\x2c\x2d\x2e\x5b\x5d\x5c\x7b\x7d]*/ } );
-			const Identifier = createToken( { name: 'Identifier', pattern: /[^\x30-\x39\0-\x20\x22\x27\x23\x2b\x2c\x2d\x2e\x5b\x5d\x5c\x7b\x7d][^\0-\x20\x22\x27\x23\x2b\x2c\x2d\x2e\x5b\x5d\x5c\x7b\x7d]*/, longer_alt: RouteIdentifier } );
+			const Identifier = createToken( { name: 'Identifier', pattern: /[^\x30-\x39\0-\x20\x22\x27\x23\x2b\x2c\x2d\x2e\x5b\x5d\x5c\x7b\x7d]([^\0-\x20\x22\x27\x23\x2b\x2c\x2e\x5b\x5d\x5c\x7b\x7d])*/, longer_alt: RouteIdentifier } );
 
 			// from http://gun.teipir.gr/VRML-amgem/spec/part1/nodesRef.html
 
@@ -203,7 +197,7 @@ class VRMLLoader extends Loader {
 			const Comment = createToken( {
 				name: 'Comment',
 				pattern: /#.*/,
-				group: chevrotain.Lexer.SKIPPED // eslint-disable-line no-undef
+				group: chevrotain.Lexer.SKIPPED
 			} );
 
 			// commas, blanks, tabs, newlines and carriage returns are whitespace characters wherever they appear outside of string fields
@@ -211,7 +205,7 @@ class VRMLLoader extends Loader {
 			const WhiteSpace = createToken( {
 				name: 'WhiteSpace',
 				pattern: /[ ,\s]/,
-				group: chevrotain.Lexer.SKIPPED // eslint-disable-line no-undef
+				group: chevrotain.Lexer.SKIPPED
 			} );
 
 			const tokens = [
@@ -256,7 +250,7 @@ class VRMLLoader extends Loader {
 
 		function createVisitor( BaseVRMLVisitor ) {
 
-			// the visitor is created dynmaically based on the given base class
+			// the visitor is created dynamically based on the given base class
 
 			class VRMLToASTVisitor extends BaseVRMLVisitor {
 
@@ -625,6 +619,7 @@ class VRMLLoader extends Loader {
 
 			switch ( nodeName ) {
 
+				case 'Anchor':
 				case 'Group':
 				case 'Transform':
 				case 'Collision':
@@ -706,7 +701,6 @@ class VRMLLoader extends Loader {
 					build = buildWorldInfoNode( node );
 					break;
 
-				case 'Anchor':
 				case 'Billboard':
 
 				case 'Inline':
@@ -794,12 +788,20 @@ class VRMLLoader extends Loader {
 						parseFieldChildren( fieldValues, object );
 						break;
 
+					case 'description':
+						// field not supported
+						break;
+
 					case 'collide':
 						// field not supported
 						break;
 
+					case 'parameter':
+						// field not supported
+						break;
+
 					case 'rotation':
-						const axis = new Vector3( fieldValues[ 0 ], fieldValues[ 1 ], fieldValues[ 2 ] );
+						const axis = new Vector3( fieldValues[ 0 ], fieldValues[ 1 ], fieldValues[ 2 ] ).normalize();
 						const angle = fieldValues[ 3 ];
 						object.quaternion.setFromAxisAngle( axis, angle );
 						break;
@@ -817,6 +819,10 @@ class VRMLLoader extends Loader {
 						break;
 
 					case 'proxy':
+						// field not supported
+						break;
+
+					case 'url':
 						// field not supported
 						break;
 
@@ -913,7 +919,7 @@ class VRMLLoader extends Loader {
 
 				} else {
 
-					skyMaterial.color.setRGB( skyColor[ 0 ], skyColor[ 1 ], skyColor[ 2 ] );
+					skyMaterial.color.setRGB( skyColor[ 0 ], skyColor[ 1 ], skyColor[ 2 ], SRGBColorSpace );
 
 				}
 
@@ -954,7 +960,10 @@ class VRMLLoader extends Loader {
 
 			// if the appearance field is NULL or unspecified, lighting is off and the unlit object color is (0, 0, 0)
 
-			let material = new MeshBasicMaterial( { color: 0x000000 } );
+			let material = new MeshBasicMaterial( {
+				name: Loader.DEFAULT_MATERIAL_NAME,
+				color: 0x000000
+			} );
 			let geometry;
 
 			for ( let i = 0, l = fields.length; i < l; i ++ ) {
@@ -1001,7 +1010,12 @@ class VRMLLoader extends Loader {
 
 				if ( type === 'points' ) { // points
 
-					const pointsMaterial = new PointsMaterial( { color: 0xffffff } );
+					const pointsMaterial = new PointsMaterial( {
+						name: Loader.DEFAULT_MATERIAL_NAME,
+						color: 0xffffff,
+						opacity: material.opacity,
+						transparent: material.transparent
+					} );
 
 					if ( geometry.attributes.color !== undefined ) {
 
@@ -1023,7 +1037,12 @@ class VRMLLoader extends Loader {
 
 				} else if ( type === 'line' ) { // lines
 
-					const lineMaterial = new LineBasicMaterial( { color: 0xffffff } );
+					const lineMaterial = new LineBasicMaterial( {
+						name: Loader.DEFAULT_MATERIAL_NAME,
+						color: 0xffffff,
+						opacity: material.opacity,
+						transparent: material.transparent
+					} );
 
 					if ( geometry.attributes.color !== undefined ) {
 
@@ -1110,7 +1129,10 @@ class VRMLLoader extends Loader {
 
 							// if the material field is NULL or unspecified, lighting is off and the unlit object color is (0, 0, 0)
 
-							material = new MeshBasicMaterial( { color: 0x000000 } );
+							material = new MeshBasicMaterial( {
+								name: Loader.DEFAULT_MATERIAL_NAME,
+								color: 0x000000
+							} );
 
 						}
 
@@ -1218,11 +1240,11 @@ class VRMLLoader extends Loader {
 						break;
 
 					case 'diffuseColor':
-						materialData.diffuseColor = new Color( fieldValues[ 0 ], fieldValues[ 1 ], fieldValues[ 2 ] );
+						materialData.diffuseColor = new Color().setRGB( fieldValues[ 0 ], fieldValues[ 1 ], fieldValues[ 2 ], SRGBColorSpace );
 						break;
 
 					case 'emissiveColor':
-						materialData.emissiveColor = new Color( fieldValues[ 0 ], fieldValues[ 1 ], fieldValues[ 2 ] );
+						materialData.emissiveColor = new Color().setRGB( fieldValues[ 0 ], fieldValues[ 1 ], fieldValues[ 2 ], SRGBColorSpace );
 						break;
 
 					case 'shininess':
@@ -1230,7 +1252,7 @@ class VRMLLoader extends Loader {
 						break;
 
 					case 'specularColor':
-						materialData.emissiveColor = new Color( fieldValues[ 0 ], fieldValues[ 1 ], fieldValues[ 2 ] );
+						materialData.specularColor = new Color().setRGB( fieldValues[ 0 ], fieldValues[ 1 ], fieldValues[ 2 ], SRGBColorSpace );
 						break;
 
 					case 'transparency':
@@ -1366,6 +1388,7 @@ class VRMLLoader extends Loader {
 						}
 
 						texture = new DataTexture( data, width, height );
+						texture.colorSpace = SRGBColorSpace;
 						texture.needsUpdate = true;
 						texture.__type = textureType; // needed for material modifications
 						break;
@@ -1438,6 +1461,7 @@ class VRMLLoader extends Loader {
 
 				texture.wrapS = wrapS;
 				texture.wrapT = wrapT;
+				texture.colorSpace = SRGBColorSpace;
 
 			}
 
@@ -1696,6 +1720,8 @@ class VRMLLoader extends Loader {
 
 				}
 
+				convertColorsToLinearSRGB( colorAttribute );
+
 			}
 
 			if ( normal ) {
@@ -1864,7 +1890,7 @@ class VRMLLoader extends Loader {
 
 						// if the colorIndex field is not empty, then one color is used for each polyline of the IndexedLineSet.
 
-						const expandedColorIndex = expandLineIndex( colorIndex ); // compute colors for each line segment (rendering primitve)
+						const expandedColorIndex = expandLineIndex( colorIndex ); // compute colors for each line segment (rendering primitive)
 						colorAttribute = computeAttributeFromIndexedData( expandedLineIndex, expandedColorIndex, color, 3 ); // compute data on vertex level
 
 					} else {
@@ -1881,8 +1907,8 @@ class VRMLLoader extends Loader {
 
 						// if the colorIndex field is not empty, then colors are applied to each vertex of the IndexedLineSet
 
-						const flattenLineColors = flattenData( color, colorIndex ); // compute colors for each VRML primitve
-						const expandedLineColors = expandLineData( flattenLineColors, coordIndex ); // compute colors for each line segment (rendering primitve)
+						const flattenLineColors = flattenData( color, colorIndex ); // compute colors for each VRML primitive
+						const expandedLineColors = expandLineData( flattenLineColors, coordIndex ); // compute colors for each line segment (rendering primitive)
 						colorAttribute = computeAttributeFromLineData( expandedLineIndex, expandedLineColors ); // compute data on vertex level
 
 
@@ -1890,12 +1916,14 @@ class VRMLLoader extends Loader {
 
 						// if the colorIndex field is empty, then the coordIndex field is used to choose colors from the Color node
 
-						const expandedLineColors = expandLineData( color, coordIndex ); // compute colors for each line segment (rendering primitve)
+						const expandedLineColors = expandLineData( color, coordIndex ); // compute colors for each line segment (rendering primitive)
 						colorAttribute = computeAttributeFromLineData( expandedLineIndex, expandedLineColors ); // compute data on vertex level
 
 					}
 
 				}
+
+				convertColorsToLinearSRGB( colorAttribute );
 
 			}
 
@@ -1962,7 +1990,15 @@ class VRMLLoader extends Loader {
 			const geometry = new BufferGeometry();
 
 			geometry.setAttribute( 'position', new Float32BufferAttribute( coord, 3 ) );
-			if ( color ) geometry.setAttribute( 'color', new Float32BufferAttribute( color, 3 ) );
+
+			if ( color ) {
+
+				const colorAttribute = new Float32BufferAttribute( color, 3 );
+				convertColorsToLinearSRGB( colorAttribute );
+
+				geometry.setAttribute( 'color', colorAttribute );
+
+			}
 
 			geometry._type = 'points';
 
@@ -2376,6 +2412,8 @@ class VRMLLoader extends Loader {
 
 				}
 
+				convertColorsToLinearSRGB( colorAttribute );
+
 			}
 
 			// normal attribute
@@ -2710,7 +2748,7 @@ class VRMLLoader extends Loader {
 
 			const indices = [];
 
-			// since face defintions can have more than three vertices, it's necessary to
+			// since face definitions can have more than three vertices, it's necessary to
 			// perform a simple triangulation
 
 			let start = 0;
@@ -3063,13 +3101,29 @@ class VRMLLoader extends Loader {
 
 		}
 
+		function convertColorsToLinearSRGB( attribute ) {
+
+			const color = new Color();
+
+			for ( let i = 0; i < attribute.count; i ++ ) {
+
+				color.fromBufferAttribute( attribute, i );
+
+				ColorManagement.toWorkingColorSpace( color, SRGBColorSpace );
+
+				attribute.setXYZ( i, color.r, color.g, color.b );
+
+			}
+
+		}
+
 		/**
 		 * Vertically paints the faces interpolating between the
 		 * specified colors at the specified angels. This is used for the Background
 		 * node, but could be applied to other nodes with multiple faces as well.
 		 *
 		 * When used with the Background node, default is directionIsDown is true if
-		 * interpolating the skyColor down from the Zenith. When interpolationg up from
+		 * interpolating the skyColor down from the Zenith. When interpolating up from
 		 * the Nadir i.e. interpolating the groundColor, the directionIsDown is false.
 		 *
 		 * The first angle is never specified, it is the Zenith (0 rad). Angles are specified
@@ -3162,6 +3216,8 @@ class VRMLLoader extends Loader {
 
 				color.copy( colorA ).lerp( colorB, t );
 
+				ColorManagement.toWorkingColorSpace( color, SRGBColorSpace );
+
 				colorAttribute.setXYZ( index, color.r, color.g, color.b );
 
 			}
@@ -3201,7 +3257,7 @@ class VRMLLexer {
 
 	constructor( tokens ) {
 
-		this.lexer = new chevrotain.Lexer( tokens ); // eslint-disable-line no-undef
+		this.lexer = new chevrotain.Lexer( tokens );
 
 	}
 
@@ -3223,7 +3279,7 @@ class VRMLLexer {
 
 }
 
-const CstParser = chevrotain.CstParser;// eslint-disable-line no-undef
+const CstParser = chevrotain.CstParser;
 
 class VRMLParser extends CstParser {
 

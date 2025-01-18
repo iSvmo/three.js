@@ -9,24 +9,22 @@
 	<body>
 		<h1>[name]</h1>
 		<p>
-			Even though this is becoming less and less of a problem, some devices or browsers may still not support WebGL.
+			Even though this is becoming less and less of a problem, some devices or browsers may still not support WebGL 2.
 			The following method allows you to check if it is supported and display a message to the user if it is not.
-		</p>
-
-		<p>
-			Add	[link:https://github.com/mrdoob/three.js/blob/master/examples/jsm/capabilities/WebGL.js]
-			to your javascript and run the following before attempting to render anything.
+			Import the WebGL support detection module, and run the following before attempting to render anything.
 		</p>
 
 		<code>
-		if ( WebGL.isWebGLAvailable() ) {
+		import WebGL from 'three/addons/capabilities/WebGL.js';
+
+		if ( WebGL.isWebGL2Available() ) {
 
 			// Initiate function or other initializations here
 			animate();
 
 		} else {
 
-			const warning = WebGL.getWebGLErrorMessage();
+			const warning = WebGL.getWebGL2ErrorMessage();
 			document.getElementById( 'container' ).appendChild( warning );
 
 		}
