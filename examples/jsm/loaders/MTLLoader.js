@@ -1,5 +1,6 @@
 import {
 	Color,
+	ColorManagement,
 	DefaultLoadingManager,
 	FileLoader,
 	FrontSide,
@@ -9,7 +10,7 @@ import {
 	RepeatWrapping,
 	TextureLoader,
 	Vector2,
-	sRGBEncoding
+	SRGBColorSpace
 } from 'three';
 
 /**
@@ -27,7 +28,7 @@ class MTLLoader extends Loader {
 	/**
 	 * Loads and parses a MTL asset from a URL.
 	 *
-	 * @param {String} url - URL to the MTL file.
+	 * @param {string} url - URL to the MTL file.
 	 * @param {Function} [onLoad] - Callback invoked with the loaded object.
 	 * @param {Function} [onProgress] - Callback for download progress.
 	 * @param {Function} [onError] - Callback for download errors.
@@ -83,7 +84,8 @@ class MTLLoader extends Loader {
 	/**
 	 * Parses a MTL file.
 	 *
-	 * @param {String} text - Content of MTL file
+	 * @param {string} text - Content of MTL file
+	 * @param {string} path
 	 * @return {MaterialCreator}
 	 *
 	 * @see setPath setResourcePath
@@ -361,7 +363,7 @@ class MaterialCreator {
 
 			if ( mapType === 'map' || mapType === 'emissiveMap' ) {
 
-				map.encoding = sRGBEncoding;
+				map.colorSpace = SRGBColorSpace;
 
 			}
 
@@ -384,21 +386,21 @@ class MaterialCreator {
 
 					// Diffuse color (color under white light) using RGB values
 
-					params.color = new Color().fromArray( value ).convertSRGBToLinear();
+					params.color = ColorManagement.toWorkingColorSpace( new Color().fromArray( value ), SRGBColorSpace );
 
 					break;
 
 				case 'ks':
 
 					// Specular color (color when light is reflected from shiny surface) using RGB values
-					params.specular = new Color().fromArray( value ).convertSRGBToLinear();
+					params.specular = ColorManagement.toWorkingColorSpace( new Color().fromArray( value ), SRGBColorSpace );
 
 					break;
 
 				case 'ke':
 
 					// Emissive using RGB values
-					params.emissive = new Color().fromArray( value ).convertSRGBToLinear();
+					params.emissive = ColorManagement.toWorkingColorSpace( new Color().fromArray( value ), SRGBColorSpace );
 
 					break;
 
@@ -438,6 +440,14 @@ class MaterialCreator {
 					// Bump texture map
 
 					setMapForType( 'bumpMap', value );
+
+					break;
+
+				case 'disp':
+
+					// Displacement texture map
+
+					setMapForType( 'displacementMap', value );
 
 					break;
 
@@ -515,6 +525,16 @@ class MaterialCreator {
 
 			matParams.bumpScale = parseFloat( items[ pos + 1 ] );
 			items.splice( pos, 2 );
+
+		}
+
+		pos = items.indexOf( '-mm' );
+
+		if ( pos >= 0 ) {
+
+			matParams.displacementBias = parseFloat( items[ pos + 1 ] );
+			matParams.displacementScale = parseFloat( items[ pos + 2 ] );
+			items.splice( pos, 3 );
 
 		}
 

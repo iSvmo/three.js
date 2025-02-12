@@ -57,6 +57,13 @@
 		for realizing custom rendering destinations. These objects are only deallocated by executing [page:WebGLRenderTarget.dispose]().
 	</p>
 
+	<h2>Skinned Mesh</h2>
+
+	<p>
+		Skinned meshes represent their bone hierarchy as skeletons. If you don't need a skinned mesh anymore, consider to call [page:Skeleton.dispose]() on the skeleton to free internal resources.
+		Keep in mind that skeletons can be shared across multiple skinned meshes, so only call `dispose()` if the skeleton is not used by other active skinned meshes.
+	</p>
+
 	<h2>Miscellaneous</h2>
 
 	<p>
@@ -99,8 +106,10 @@
 	<h3>What happens when I call `dispose()` and then use the respective object at a later point?</h3>
 
 	<p>
-		The deleted internal resources will be created again by the engine. So no runtime error will occur but you might notice a negative performance impact for the current frame,
-		especially when shader programs have to be compiled.
+		That depends. For geometries, materials, textures, render targets and post processing passes the deleted internal resources can be created again by the engine. 
+		So no runtime error will occur but you might notice a negative performance impact for the current frame, especially when shader programs have to be compiled.
+
+		Controls and renderers are an exception. Instances of these classes can not be used after `dispose()` has been called. You have to create new instances in this case.
 	</p>
 
 	<h3>How should I manage *three.js* objects in my app? When do I know how to dispose things?</h3>

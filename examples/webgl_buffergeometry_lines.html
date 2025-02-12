@@ -11,14 +11,11 @@
 		<div id="container"></div>
 		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - buffergeometry - lines</div>
 
-		<!-- Import maps polyfill -->
-		<!-- Remove this when import maps will be widely supported -->
-		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-
 		<script type="importmap">
 			{
 				"imports": {
-					"three": "../build/three.module.js"
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
 				}
 			}
 		</script>
@@ -27,9 +24,10 @@
 
 			import * as THREE from 'three';
 
-			import Stats from './jsm/libs/stats.module.js';
+			import { Timer } from 'three/addons/misc/Timer.js';
+			import Stats from 'three/addons/libs/stats.module.js';
 
-			let container, stats, clock;
+			let container, stats, timer;
 
 			let camera, scene, renderer;
 
@@ -40,7 +38,6 @@
 			let t = 0;
 
 			init();
-			animate();
 
 			function init() {
 
@@ -53,7 +50,7 @@
 
 				scene = new THREE.Scene();
 
-				clock = new THREE.Clock();
+				timer = new Timer();
 
 				const geometry = new THREE.BufferGeometry();
 				const material = new THREE.LineBasicMaterial( { vertexColors: true } );
@@ -93,7 +90,7 @@
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.outputEncoding = THREE.sRGBEncoding;
+				renderer.setAnimationLoop( animate );
 
 				container.appendChild( renderer.domElement );
 
@@ -121,17 +118,10 @@
 
 			function animate() {
 
-				requestAnimationFrame( animate );
+				timer.update();
 
-				render();
-				stats.update();
-
-			}
-
-			function render() {
-
-				const delta = clock.getDelta();
-				const time = clock.getElapsedTime();
+				const delta = timer.getDelta();
+				const time = timer.getElapsed();
 
 				line.rotation.x = time * 0.25;
 				line.rotation.y = time * 0.5;
@@ -140,6 +130,8 @@
 				line.morphTargetInfluences[ 0 ] = Math.abs( Math.sin( t ) );
 
 				renderer.render( scene, camera );
+
+				stats.update();
 
 			}
 

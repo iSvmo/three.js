@@ -1,6 +1,8 @@
 import {
 	Color,
+	ColorManagement,
 	Matrix3,
+	SRGBColorSpace,
 	Vector2,
 	Vector3
 } from 'three';
@@ -31,12 +33,6 @@ class OBJExporter {
 			const geometry = mesh.geometry;
 
 			const normalMatrixWorld = new Matrix3();
-
-			if ( geometry.isBufferGeometry !== true ) {
-
-				throw new Error( 'THREE.OBJExporter: Geometry is not of type THREE.BufferGeometry.' );
-
-			}
 
 			// shortcuts
 			const vertices = geometry.getAttribute( 'position' );
@@ -159,12 +155,6 @@ class OBJExporter {
 			const geometry = line.geometry;
 			const type = line.type;
 
-			if ( geometry.isBufferGeometry !== true ) {
-
-				throw new Error( 'THREE.OBJExporter: Geometry is not of type THREE.BufferGeometry.' );
-
-			}
-
 			// shortcuts
 			const vertices = geometry.getAttribute( 'position' );
 
@@ -222,12 +212,6 @@ class OBJExporter {
 
 			const geometry = points.geometry;
 
-			if ( geometry.isBufferGeometry !== true ) {
-
-				throw new Error( 'THREE.OBJExporter: Geometry is not of type THREE.BufferGeometry.' );
-
-			}
-
 			const vertices = geometry.getAttribute( 'position' );
 			const colors = geometry.getAttribute( 'color' );
 
@@ -244,7 +228,9 @@ class OBJExporter {
 
 					if ( colors !== undefined ) {
 
-						color.fromBufferAttribute( colors, i ).convertLinearToSRGB();
+						color.fromBufferAttribute( colors, i );
+
+						ColorManagement.fromWorkingColorSpace( color, SRGBColorSpace );
 
 						output += ' ' + color.r + ' ' + color.g + ' ' + color.b;
 

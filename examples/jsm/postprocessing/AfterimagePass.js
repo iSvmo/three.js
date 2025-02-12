@@ -1,11 +1,13 @@
 import {
-	MeshBasicMaterial,
+	HalfFloatType,
 	NearestFilter,
+	NoBlending,
 	ShaderMaterial,
 	UniformsUtils,
 	WebGLRenderTarget
 } from 'three';
 import { Pass, FullScreenQuad } from './Pass.js';
+import { CopyShader } from '../shaders/CopyShader.js';
 import { AfterimageShader } from '../shaders/AfterimageShader.js';
 
 class AfterimagePass extends Pass {
@@ -13,8 +15,6 @@ class AfterimagePass extends Pass {
 	constructor( damp = 0.96 ) {
 
 		super();
-
-		if ( AfterimageShader === undefined ) console.error( 'THREE.AfterimagePass relies on AfterimageShader' );
 
 		this.shader = AfterimageShader;
 
@@ -24,13 +24,15 @@ class AfterimagePass extends Pass {
 
 		this.textureComp = new WebGLRenderTarget( window.innerWidth, window.innerHeight, {
 			magFilter: NearestFilter,
+			type: HalfFloatType
 		} );
 
 		this.textureOld = new WebGLRenderTarget( window.innerWidth, window.innerHeight, {
 			magFilter: NearestFilter,
+			type: HalfFloatType
 		} );
 
-		this.shaderMaterial = new ShaderMaterial( {
+		this.compFsMaterial = new ShaderMaterial( {
 
 			uniforms: this.uniforms,
 			vertexShader: this.shader.vertexShader,
@@ -38,10 +40,20 @@ class AfterimagePass extends Pass {
 
 		} );
 
-		this.compFsQuad = new FullScreenQuad( this.shaderMaterial );
+		this.compFsQuad = new FullScreenQuad( this.compFsMaterial );
 
-		const material = new MeshBasicMaterial();
-		this.copyFsQuad = new FullScreenQuad( material );
+		const copyShader = CopyShader;
+
+		this.copyFsMaterial = new ShaderMaterial( {
+			uniforms: UniformsUtils.clone( copyShader.uniforms ),
+			vertexShader: copyShader.vertexShader,
+			fragmentShader: copyShader.fragmentShader,
+			blending: NoBlending,
+			depthTest: false,
+			depthWrite: false
+		} );
+
+		this.copyFsQuad = new FullScreenQuad( this.copyFsMaterial );
 
 	}
 
@@ -53,7 +65,7 @@ class AfterimagePass extends Pass {
 		renderer.setRenderTarget( this.textureComp );
 		this.compFsQuad.render( renderer );
 
-		this.copyFsQuad.material.map = this.textureComp.texture;
+		this.copyFsQuad.material.uniforms.tDiffuse.value = this.textureComp.texture;
 
 		if ( this.renderToScreen ) {
 
@@ -82,6 +94,19 @@ class AfterimagePass extends Pass {
 
 		this.textureComp.setSize( width, height );
 		this.textureOld.setSize( width, height );
+
+	}
+
+	dispose() {
+
+		this.textureComp.dispose();
+		this.textureOld.dispose();
+
+		this.compFsMaterial.dispose();
+		this.copyFsMaterial.dispose();
+
+		this.compFsQuad.dispose();
+		this.copyFsQuad.dispose();
 
 	}
 

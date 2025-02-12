@@ -5,19 +5,22 @@ import {
 	Mesh,
 	MeshBasicMaterial,
 	PlaneGeometry,
-	Texture
+	Texture,
+	SRGBColorSpace
 } from 'three';
 
 /**
  * This class has been made to hold a slice of a volume data
  * @class
- * @param   {Volume} volume    The associated volume
- * @param   {number}       [index=0] The index of the slice
- * @param   {string}       [axis='z']      For now only 'x', 'y' or 'z' but later it will change to a normal vector
  * @see Volume
  */
 class VolumeSlice {
 
+	/**
+ 	 * @param {Volume} volume     The associated volume
+ 	 * @param {number} [index=0]  The index of the slice
+ 	 * @param {string} [axis='z'] For now only 'x', 'y' or 'z' but later it will change to a normal vector
+	 */
 	constructor( volume, index, axis ) {
 
 		const slice = this;
@@ -26,7 +29,7 @@ class VolumeSlice {
 		 */
 		this.volume = volume;
 		/**
-		 * @member {Number} index The index of the slice, if changed, will automatically call updateGeometry at the next repaint
+		 * @member {number} index The index of the slice, if changed, will automatically call updateGeometry at the next repaint
 		 */
 		index = index || 0;
 		Object.defineProperty( this, 'index', {
@@ -44,7 +47,7 @@ class VolumeSlice {
 			}
 		} );
 		/**
-		 * @member {String} axis The normal axis
+		 * @member {string} axis The normal axis
 		 */
 		this.axis = axis || 'z';
 
@@ -67,7 +70,9 @@ class VolumeSlice {
 
 		const canvasMap = new Texture( this.canvas );
 		canvasMap.minFilter = LinearFilter;
+		canvasMap.generateMipmaps = false;
 		canvasMap.wrapS = canvasMap.wrapT = ClampToEdgeWrapping;
+		canvasMap.colorSpace = SRGBColorSpace;
 		const material = new MeshBasicMaterial( { map: canvasMap, side: DoubleSide, transparent: true } );
 		/**
 		 * @member {Mesh} mesh The mesh ready to get used in the scene
@@ -75,32 +80,32 @@ class VolumeSlice {
 		this.mesh = new Mesh( this.geometry, material );
 		this.mesh.matrixAutoUpdate = false;
 		/**
-		 * @member {Boolean} geometryNeedsUpdate If set to true, updateGeometry will be triggered at the next repaint
+		 * @member {boolean} geometryNeedsUpdate If set to true, updateGeometry will be triggered at the next repaint
 		 */
 		this.geometryNeedsUpdate = true;
 		this.repaint();
 
 		/**
-		 * @member {Number} iLength Width of slice in the original coordinate system, corresponds to the width of the buffer canvas
+		 * @member {number} iLength Width of slice in the original coordinate system, corresponds to the width of the buffer canvas
 		 */
 
 		/**
-		 * @member {Number} jLength Height of slice in the original coordinate system, corresponds to the height of the buffer canvas
+		 * @member {number} jLength Height of slice in the original coordinate system, corresponds to the height of the buffer canvas
 		 */
 
 		/**
 		 * @member {Function} sliceAccess Function that allow the slice to access right data
 		 * @see Volume.extractPerpendicularPlane
-		 * @param {Number} i The first coordinate
-		 * @param {Number} j The second coordinate
-		 * @returns {Number} the index corresponding to the voxel in volume.data of the given position in the slice
+		 * @param {number} i The first coordinate
+		 * @param {number} j The second coordinate
+		 * @returns {number} the index corresponding to the voxel in volume.data of the given position in the slice
 		 */
 
 
 	}
 
 	/**
-	 * @member {Function} repaint Refresh the texture and the geometry if geometryNeedsUpdate is set to true
+	 * Refresh the texture and the geometry if geometryNeedsUpdate is set to true
 	 * @memberof VolumeSlice
 	 */
 	repaint() {
@@ -186,7 +191,7 @@ class VolumeSlice {
 	}
 
 	/**
-	 * @member {Function} Refresh the geometry according to axis and index
+	 * Refresh the geometry according to axis and index
 	 * @see Volume.extractPerpendicularPlane
 	 * @memberof VolumeSlice
 	 */
