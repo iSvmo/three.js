@@ -12,9 +12,20 @@
 	<body>
 		<link rel="stylesheet" href="css/main.css">
 
-		<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.9.6/dist/ffmpeg.min.js" defer></script>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "../examples/jsm/",
 
-		<script src="../examples/js/libs/draco/draco_encoder.js"></script>
+					"three/examples/": "../examples/",
+					"three-gpu-pathtracer": "https://cdn.jsdelivr.net/npm/three-gpu-pathtracer@0.0.23/build/index.module.js",
+					"three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.4/build/index.module.js"
+				}
+			}
+		</script>
+
+		<script src="../examples/jsm/libs/draco/draco_encoder.js"></script>
 
 		<link rel="stylesheet" href="js/libs/codemirror/codemirror.css">
 		<link rel="stylesheet" href="js/libs/codemirror/theme/monokai.css">
@@ -24,6 +35,8 @@
 
 		<script src="js/libs/esprima.js"></script>
 		<script src="js/libs/jsonlint.js"></script>
+
+		<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
 		<link rel="stylesheet" href="js/libs/codemirror/addon/dialog.css">
 		<link rel="stylesheet" href="js/libs/codemirror/addon/show-hint.css">
@@ -45,18 +58,6 @@
 		<script src="js/libs/tern-threejs/threejs.js"></script>
 		<script src="js/libs/signals.min.js"></script>
 
-		<!-- Import maps polyfill -->
-		<!-- Remove this when import maps will be widely supported -->
-		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-
-		<script type="importmap">
-			{
-				"imports": {
-					"three": "../build/three.module.js"
-				}
-			}
-		</script>
-
 		<script type="module">
 
 			import * as THREE from 'three';
@@ -69,16 +70,9 @@
 			import { Sidebar } from './js/Sidebar.js';
 			import { Menubar } from './js/Menubar.js';
 			import { Resizer } from './js/Resizer.js';
-			import { VRButton } from '../examples/jsm/webxr/VRButton.js';
 
 			window.URL = window.URL || window.webkitURL;
 			window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
-
-			Number.prototype.format = function () {
-
-				return this.toString().replace( /(\d)(?=(\d{3})+(?!\d))/g, '$1,' );
-
-			};
 
 			//
 
@@ -86,7 +80,6 @@
 
 			window.editor = editor; // Expose editor to Console
 			window.THREE = THREE; // Expose THREE to APP Scripts and Console
-			window.VRButton = VRButton; // Expose VRButton to APP Scripts
 
 			const viewport = new Viewport( editor );
 			document.body.appendChild( viewport.dom );
@@ -113,13 +106,13 @@
 
 			editor.storage.init( function () {
 
-				editor.storage.get( function ( state ) {
+				editor.storage.get( async function ( state ) {
 
 					if ( isLoadingFromHash ) return;
 
 					if ( state !== undefined ) {
 
-						editor.fromJSON( state );
+						await editor.fromJSON( state );
 
 					}
 
@@ -227,7 +220,7 @@
 
 				const file = hash.slice( 6 );
 
-				if ( confirm( 'Any unsaved data will be lost. Are you sure?' ) ) {
+				if ( confirm( editor.strings.getKey( 'prompt/file/open' ) ) ) {
 
 					const loader = new THREE.FileLoader();
 					loader.crossOrigin = '';

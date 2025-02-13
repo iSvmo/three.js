@@ -32,6 +32,8 @@ class VertexNormalsHelper extends LineSegments {
 
 		this.matrixAutoUpdate = false;
 
+		this.isVertexNormalsHelper = true;
+
 		this.update();
 
 	}
@@ -84,7 +86,13 @@ class VertexNormalsHelper extends LineSegments {
 
 	}
 
-}
+	dispose() {
 
+		this.geometry.dispose();
+		this.material.dispose();
+
+	}
+
+}
 
 export { VertexNormalsHelper };

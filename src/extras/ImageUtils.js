@@ -1,5 +1,5 @@
 import { createElementNS } from '../utils.js';
-import { SRGBToLinear } from '../math/Color.js';
+import { SRGBToLinear } from '../math/ColorManagement.js';
 
 let _canvas;
 
@@ -13,7 +13,7 @@ class ImageUtils {
 
 		}
 
-		if ( typeof HTMLCanvasElement == 'undefined' ) {
+		if ( typeof HTMLCanvasElement === 'undefined' ) {
 
 			return image.src;
 
@@ -48,17 +48,7 @@ class ImageUtils {
 
 		}
 
-		if ( canvas.width > 2048 || canvas.height > 2048 ) {
-
-			console.warn( 'THREE.ImageUtils.getDataURL: Image converted to jpg for performance reasons', image );
-
-			return canvas.toDataURL( 'image/jpeg', 0.6 );
-
-		} else {
-
-			return canvas.toDataURL( 'image/png' );
-
-		}
+		return canvas.toDataURL( 'image/png' );
 
 	}
 

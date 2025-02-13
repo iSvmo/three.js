@@ -7,7 +7,7 @@
 		<link type="text/css" rel="stylesheet" href="page.css" />
 	</head>
 	<body>
-		[page:EventDispatcher] &rarr;
+		[page:Controls] &rarr;
 
 		<h1>指针锁定控制器（[name]）</h1>
 
@@ -15,6 +15,17 @@
 		该类的实现是基于[link:https://developer.mozilla.org/en-US/docs/Web/API/Pointer_Lock_API Pointer Lock API]的。
 		对于第一人称3D游戏来说， [name] 是一个非常完美的选择。
 		</p>
+
+		<h2>导入</h2>
+
+		<p>
+			[name] 是一个附加组件，必须显式导入。
+			请参阅 [link:#manual/introduction/Installation Installation / Addons].
+		</p>
+
+		<code>
+			import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+		</code>
 
 		<h2>代码示例</h2>
 
@@ -40,7 +51,7 @@
 
 		<p>[example:misc_controls_pointerlock misc / controls / pointerlock ]</p>
 
-		<h2>Constructor</h2>
+		<h2>构造函数</h2>
 
 		<h3>[name]( [param:Camera camera], [param:HTMLDOMElement domElement] )</h3>
 		<p>
@@ -74,11 +85,7 @@
 
 		<h2>属性</h2>
 
-		<h3>[property:HTMLDOMElement domElement]</h3>
-		<p>
-			该 HTMLDOMElement 用于监听鼠标/触摸事件，该属性必须在构造函数中传入。在此处改变它将不会设置新的事件监听。
-		</p>
-
+		<p>共有属性请参见其基类[page:Controls]。</p>
 
 		<h3>[property:Boolean isLocked]</h3>
 		<p>
@@ -87,27 +94,22 @@
 
 		<h3>[property:Float maxPolarAngle]</h3>
 		<p>
-			Camera pitch, upper limit. Range is 0 to Math.PI radians. Default is Math.PI.
+			摄像机的俯仰角上限限制。范围为0到Math.PI弧度之间。默认值为Math.PI。
 		</p>
 
 		<h3>[property:Float minPolarAngle]</h3>
 		<p>
-			Camera pitch, lower limit. Range is 0 to Math.PI radians. Default is 0.
+			摄像机的俯仰角下限限制。范围为0到Math.PI弧度之间。默认值为0。
 		</p>
 
-		<h2>Methods</h2>
-
-		<p>共有方法请参见其基类[page:EventDispatcher]。</p>
-
-		<h3>[method:undefined connect] ()</h3>
+		<h3>[property:Float pointerSpeed]</h3>
 		<p>
-			添加控制器的事件监听。
+			指针移动对相机旋转的影响程度的乘数。默认值为1。
 		</p>
 
-		<h3>[method:undefined disconnect] ()</h3>
-		<p>
-			移除控制器的事件监听。
-		</p>
+		<h2>方法</h2>
+
+		<p>共有方法请参见其基类[page:Controls]。</p>
 
 		<h3>[method:Vector3 getDirection] ( [param:Vector3 target] )</h3>
 		<p>

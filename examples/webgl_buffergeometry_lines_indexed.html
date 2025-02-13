@@ -12,14 +12,11 @@
 		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - buffergeometry - lines - indexed</div>
 
 
-		<!-- Import maps polyfill -->
-		<!-- Remove this when import maps will be widely supported -->
-		<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-
 		<script type="importmap">
 			{
 				"imports": {
-					"three": "../build/three.module.js"
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
 				}
 			}
 		</script>
@@ -28,7 +25,7 @@
 
 			import * as THREE from 'three';
 
-			import Stats from './jsm/libs/stats.module.js';
+			import Stats from 'three/addons/libs/stats.module.js';
 
 			let container, stats;
 
@@ -37,7 +34,6 @@
 			let parent_node;
 
 			init();
-			animate();
 
 			function init() {
 
@@ -63,8 +59,6 @@
 				const rangle = 60 * Math.PI / 180.0;
 
 				function add_vertex( v ) {
-
-					if ( next_positions_index == 0xffff ) console.error( 'Too many points.' );
 
 					positions.push( v.x, v.y, v.z );
 					colors.push( Math.random() * 0.5 + 0.5, Math.random() * 0.5 + 0.5, 1 );
@@ -198,7 +192,7 @@
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
-				renderer.outputEncoding = THREE.sRGBEncoding;
+				renderer.setAnimationLoop( animate );
 
 				container.appendChild( renderer.domElement );
 
@@ -226,20 +220,13 @@
 
 			function animate() {
 
-				requestAnimationFrame( animate );
-
-				render();
-				stats.update();
-
-			}
-
-			function render() {
-
 				const time = Date.now() * 0.001;
 
 				parent_node.rotation.z = time * 0.5;
 
 				renderer.render( scene, camera );
+
+				stats.update();
 
 			}
 

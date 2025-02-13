@@ -9,15 +9,11 @@
 	<meta name="twitter:site" content="@threejs">
 	<meta name="twitter:title" content="Three.js – 加载 .gltf 文件">
 	<meta property="og:image" content="https://threejs.org/files/share.png">
-	<link rel="shortcut icon" href="/files/favicon_white.ico" media="(prefers-color-scheme: dark)">
-	<link rel="shortcut icon" href="/files/favicon.ico" media="(prefers-color-scheme: light)">
+	<link rel="shortcut icon" href="../../files/favicon_white.ico" media="(prefers-color-scheme: dark)">
+	<link rel="shortcut icon" href="../../files/favicon.ico" media="(prefers-color-scheme: light)">
 
-	<link rel="stylesheet" href="/manual/resources/lesson.css">
-	<link rel="stylesheet" href="/manual/resources/lang.css">
-	<!-- Import maps polyfill -->
-	<!-- Remove this when import maps will be widely supported -->
-	<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-
+	<link rel="stylesheet" href="../resources/lesson.css">
+	<link rel="stylesheet" href="../resources/lang.css">
 	<script type="importmap">
 {
 "imports": {
@@ -104,10 +100,10 @@ gltfLoader.load(url, (gltf) =&gt; {
 				<p>我们需要包含 <a href="/docs/#examples/loaders/GLTFLoader"><code class="notranslate"
 							translate="no">GLTFLoader</code></a> 并删除 <a href="/docs/#examples/loaders/OBJLoader"><code
 							class="notranslate" translate="no">OBJLoader</code></a>.</p>
-				<pre class="prettyprint showlinemods notranslate lang-html" translate="no">-import {LoaderSupport} from '/examples/jsm/loaders/LoaderSupport.js';
--import {OBJLoader} from '/examples/jsm/loaders/OBJLoader.js';
--import {MTLLoader} from '/examples/jsm/loaders/MTLLoader.js';
-+import {GLTFLoader} from '/examples/jsm/loaders/GLTFLoader.js';
+				<pre class="prettyprint showlinemods notranslate lang-html" translate="no">-import {LoaderSupport} from 'three/addons/loaders/LoaderSupport.js';
+-import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
+-import {MTLLoader} from 'three/addons/loaders/MTLLoader.js';
++import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 </pre>
 				<p>像这样运行</p>
 				<p></p>
@@ -262,7 +258,7 @@ gltfLoader.load('resources/models/cartoon_lowpoly_small_city_free_pack/scene.glt
 -    cars = root.getObjectByName('Cars');
 +    const loadedCars = root.getObjectByName('Cars');
 +    const fixes = [
-+      { prefix: 'Car_08', rot: [Math.PI * .5, 0, Math.PI +* .5], },
++      { prefix: 'Car_08', rot: [Math.PI * .5, 0, Math.PI * .5], },
 +      { prefix: 'CAR_03', rot: [0, Math.PI, 0], },
 +      { prefix: 'Car_04', rot: [0, Math.PI, 0], },
 +    ];
@@ -521,7 +517,7 @@ scene.add(curveObject);
 					接下来，我们选取曲线远一点的点。
 					使用<code class="notranslate" translate="no">lookAt</code> 设置汽车的朝向 并将汽车放置在两点重点。</p>
 				<pre class="prettyprint showlinemods notranslate lang-js" translate="no">
-// 创建两个向量用于路径计算 
+// 创建两个向量用于路径计算
 const carPosition = new THREE.Vector3();
 const carTarget = new THREE.Vector3();
 
@@ -543,7 +539,7 @@ function render(time) {
 +      curve.getPointAt(u % 1, carPosition);
 +      carPosition.applyMatrix4(curveObject.matrixWorld);
 +
-+      // 曲线再远点获取第二个点 
++      // 曲线再远点获取第二个点
 +      curve.getPointAt((u + targetOffset) % 1, carTarget);
 +      carTarget.applyMatrix4(curveObject.matrixWorld);
 +
@@ -678,8 +674,8 @@ scene.add(light.target);
 		</div>
 	</div>
 
-	<script src="/manual/resources/prettify.js"></script>
-	<script src="/manual/resources/lesson.js"></script>
+	<script src="../resources/prettify.js"></script>
+	<script src="../resources/lesson.js"></script>
 
 
 

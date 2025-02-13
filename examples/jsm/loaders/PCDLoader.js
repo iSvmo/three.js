@@ -1,11 +1,13 @@
 import {
 	BufferGeometry,
+	Color,
 	FileLoader,
 	Float32BufferAttribute,
+	Int32BufferAttribute,
 	Loader,
-	LoaderUtils,
 	Points,
-	PointsMaterial
+	PointsMaterial,
+	SRGBColorSpace
 } from 'three';
 
 class PCDLoader extends Loader {
@@ -122,19 +124,19 @@ class PCDLoader extends Loader {
 
 			// remove comments
 
-			PCDheader.str = PCDheader.str.replace( /\#.*/gi, '' );
+			PCDheader.str = PCDheader.str.replace( /#.*/gi, '' );
 
 			// parse
 
-			PCDheader.version = /VERSION (.*)/i.exec( PCDheader.str );
-			PCDheader.fields = /FIELDS (.*)/i.exec( PCDheader.str );
-			PCDheader.size = /SIZE (.*)/i.exec( PCDheader.str );
-			PCDheader.type = /TYPE (.*)/i.exec( PCDheader.str );
-			PCDheader.count = /COUNT (.*)/i.exec( PCDheader.str );
-			PCDheader.width = /WIDTH (.*)/i.exec( PCDheader.str );
-			PCDheader.height = /HEIGHT (.*)/i.exec( PCDheader.str );
-			PCDheader.viewpoint = /VIEWPOINT (.*)/i.exec( PCDheader.str );
-			PCDheader.points = /POINTS (.*)/i.exec( PCDheader.str );
+			PCDheader.version = /^VERSION (.*)/im.exec( PCDheader.str );
+			PCDheader.fields = /^FIELDS (.*)/im.exec( PCDheader.str );
+			PCDheader.size = /^SIZE (.*)/im.exec( PCDheader.str );
+			PCDheader.type = /^TYPE (.*)/im.exec( PCDheader.str );
+			PCDheader.count = /^COUNT (.*)/im.exec( PCDheader.str );
+			PCDheader.width = /^WIDTH (.*)/im.exec( PCDheader.str );
+			PCDheader.height = /^HEIGHT (.*)/im.exec( PCDheader.str );
+			PCDheader.viewpoint = /^VIEWPOINT (.*)/im.exec( PCDheader.str );
+			PCDheader.points = /^POINTS (.*)/im.exec( PCDheader.str );
 
 			// evaluate
 
@@ -218,7 +220,7 @@ class PCDLoader extends Loader {
 
 		}
 
-		const textData = LoaderUtils.decodeText( new Uint8Array( data ) );
+		const textData = new TextDecoder().decode( data );
 
 		// parse header (always ascii format)
 
@@ -229,6 +231,10 @@ class PCDLoader extends Loader {
 		const position = [];
 		const normal = [];
 		const color = [];
+		const intensity = [];
+		const label = [];
+
+		const c = new Color();
 
 		// ascii
 
@@ -270,10 +276,13 @@ class PCDLoader extends Loader {
 
 					}
 
-					const r = ( rgb >> 16 ) & 0x0000ff;
-					const g = ( rgb >> 8 ) & 0x0000ff;
-					const b = ( rgb >> 0 ) & 0x0000ff;
-					color.push( r / 255, g / 255, b / 255 );
+					const r = ( ( rgb >> 16 ) & 0x0000ff ) / 255;
+					const g = ( ( rgb >> 8 ) & 0x0000ff ) / 255;
+					const b = ( ( rgb >> 0 ) & 0x0000ff ) / 255;
+
+					c.setRGB( r, g, b, SRGBColorSpace );
+
+					color.push( c.r, c.g, c.b );
 
 				}
 
@@ -282,6 +291,18 @@ class PCDLoader extends Loader {
 					normal.push( parseFloat( line[ offset.normal_x ] ) );
 					normal.push( parseFloat( line[ offset.normal_y ] ) );
 					normal.push( parseFloat( line[ offset.normal_z ] ) );
+
+				}
+
+				if ( offset.intensity !== undefined ) {
+
+					intensity.push( parseFloat( line[ offset.intensity ] ) );
+
+				}
+
+				if ( offset.label !== undefined ) {
+
+					label.push( parseInt( line[ offset.label ] ) );
 
 				}
 
@@ -309,25 +330,51 @@ class PCDLoader extends Loader {
 
 				if ( offset.x !== undefined ) {
 
-					position.push( dataview.getFloat32( ( PCDheader.points * offset.x ) + PCDheader.size[ 0 ] * i, this.littleEndian ) );
-					position.push( dataview.getFloat32( ( PCDheader.points * offset.y ) + PCDheader.size[ 1 ] * i, this.littleEndian ) );
-					position.push( dataview.getFloat32( ( PCDheader.points * offset.z ) + PCDheader.size[ 2 ] * i, this.littleEndian ) );
+					const xIndex = PCDheader.fields.indexOf( 'x' );
+					const yIndex = PCDheader.fields.indexOf( 'y' );
+					const zIndex = PCDheader.fields.indexOf( 'z' );
+					position.push( dataview.getFloat32( ( PCDheader.points * offset.x ) + PCDheader.size[ xIndex ] * i, this.littleEndian ) );
+					position.push( dataview.getFloat32( ( PCDheader.points * offset.y ) + PCDheader.size[ yIndex ] * i, this.littleEndian ) );
+					position.push( dataview.getFloat32( ( PCDheader.points * offset.z ) + PCDheader.size[ zIndex ] * i, this.littleEndian ) );
 
 				}
 
 				if ( offset.rgb !== undefined ) {
 
-					color.push( dataview.getUint8( ( PCDheader.points * offset.rgb ) + PCDheader.size[ 3 ] * i + 2 ) / 255.0 );
-					color.push( dataview.getUint8( ( PCDheader.points * offset.rgb ) + PCDheader.size[ 3 ] * i + 1 ) / 255.0 );
-					color.push( dataview.getUint8( ( PCDheader.points * offset.rgb ) + PCDheader.size[ 3 ] * i + 0 ) / 255.0 );
+					const rgbIndex = PCDheader.fields.indexOf( 'rgb' );
+
+					const r = dataview.getUint8( ( PCDheader.points * offset.rgb ) + PCDheader.size[ rgbIndex ] * i + 2 ) / 255.0;
+					const g = dataview.getUint8( ( PCDheader.points * offset.rgb ) + PCDheader.size[ rgbIndex ] * i + 1 ) / 255.0;
+					const b = dataview.getUint8( ( PCDheader.points * offset.rgb ) + PCDheader.size[ rgbIndex ] * i + 0 ) / 255.0;
+
+					c.setRGB( r, g, b, SRGBColorSpace );
+
+					color.push( c.r, c.g, c.b );
 
 				}
 
 				if ( offset.normal_x !== undefined ) {
 
-					normal.push( dataview.getFloat32( ( PCDheader.points * offset.normal_x ) + PCDheader.size[ 4 ] * i, this.littleEndian ) );
-					normal.push( dataview.getFloat32( ( PCDheader.points * offset.normal_y ) + PCDheader.size[ 5 ] * i, this.littleEndian ) );
-					normal.push( dataview.getFloat32( ( PCDheader.points * offset.normal_z ) + PCDheader.size[ 6 ] * i, this.littleEndian ) );
+					const xIndex = PCDheader.fields.indexOf( 'normal_x' );
+					const yIndex = PCDheader.fields.indexOf( 'normal_y' );
+					const zIndex = PCDheader.fields.indexOf( 'normal_z' );
+					normal.push( dataview.getFloat32( ( PCDheader.points * offset.normal_x ) + PCDheader.size[ xIndex ] * i, this.littleEndian ) );
+					normal.push( dataview.getFloat32( ( PCDheader.points * offset.normal_y ) + PCDheader.size[ yIndex ] * i, this.littleEndian ) );
+					normal.push( dataview.getFloat32( ( PCDheader.points * offset.normal_z ) + PCDheader.size[ zIndex ] * i, this.littleEndian ) );
+
+				}
+
+				if ( offset.intensity !== undefined ) {
+
+					const intensityIndex = PCDheader.fields.indexOf( 'intensity' );
+					intensity.push( dataview.getFloat32( ( PCDheader.points * offset.intensity ) + PCDheader.size[ intensityIndex ] * i, this.littleEndian ) );
+
+				}
+
+				if ( offset.label !== undefined ) {
+
+					const labelIndex = PCDheader.fields.indexOf( 'label' );
+					label.push( dataview.getInt32( ( PCDheader.points * offset.label ) + PCDheader.size[ labelIndex ] * i, this.littleEndian ) );
 
 				}
 
@@ -354,9 +401,13 @@ class PCDLoader extends Loader {
 
 				if ( offset.rgb !== undefined ) {
 
-					color.push( dataview.getUint8( row + offset.rgb + 2 ) / 255.0 );
-					color.push( dataview.getUint8( row + offset.rgb + 1 ) / 255.0 );
-					color.push( dataview.getUint8( row + offset.rgb + 0 ) / 255.0 );
+					const r = dataview.getUint8( row + offset.rgb + 2 ) / 255.0;
+					const g = dataview.getUint8( row + offset.rgb + 1 ) / 255.0;
+					const b = dataview.getUint8( row + offset.rgb + 0 ) / 255.0;
+
+					c.setRGB( r, g, b, SRGBColorSpace );
+
+					color.push( c.r, c.g, c.b );
 
 				}
 
@@ -365,6 +416,18 @@ class PCDLoader extends Loader {
 					normal.push( dataview.getFloat32( row + offset.normal_x, this.littleEndian ) );
 					normal.push( dataview.getFloat32( row + offset.normal_y, this.littleEndian ) );
 					normal.push( dataview.getFloat32( row + offset.normal_z, this.littleEndian ) );
+
+				}
+
+				if ( offset.intensity !== undefined ) {
+
+					intensity.push( dataview.getFloat32( row + offset.intensity, this.littleEndian ) );
+
+				}
+
+				if ( offset.label !== undefined ) {
+
+					label.push( dataview.getInt32( row + offset.label, this.littleEndian ) );
 
 				}
 
@@ -379,6 +442,8 @@ class PCDLoader extends Loader {
 		if ( position.length > 0 ) geometry.setAttribute( 'position', new Float32BufferAttribute( position, 3 ) );
 		if ( normal.length > 0 ) geometry.setAttribute( 'normal', new Float32BufferAttribute( normal, 3 ) );
 		if ( color.length > 0 ) geometry.setAttribute( 'color', new Float32BufferAttribute( color, 3 ) );
+		if ( intensity.length > 0 ) geometry.setAttribute( 'intensity', new Float32BufferAttribute( intensity, 1 ) );
+		if ( label.length > 0 ) geometry.setAttribute( 'label', new Int32BufferAttribute( label, 1 ) );
 
 		geometry.computeBoundingSphere();
 
@@ -389,10 +454,6 @@ class PCDLoader extends Loader {
 		if ( color.length > 0 ) {
 
 			material.vertexColors = true;
-
-		} else {
-
-			material.color.setHex( Math.random() * 0xffffff );
 
 		}
 

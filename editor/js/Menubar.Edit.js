@@ -1,10 +1,11 @@
 import { Box3, Vector3 } from 'three';
 
-import { UIPanel, UIRow, UIHorizontalRule } from './libs/ui.js';
+import { UIPanel, UIRow, UIHorizontalRule, UIText } from './libs/ui.js';
 
 import { AddObjectCommand } from './commands/AddObjectCommand.js';
 import { RemoveObjectCommand } from './commands/RemoveObjectCommand.js';
 import { SetPositionCommand } from './commands/SetPositionCommand.js';
+import { clone } from '../../examples/jsm/utils/SkeletonUtils.js';
 
 function MenubarEdit( editor ) {
 
@@ -27,6 +28,7 @@ function MenubarEdit( editor ) {
 	const undo = new UIRow();
 	undo.setClass( 'option' );
 	undo.setTextContent( strings.getKey( 'menubar/edit/undo' ) );
+	undo.add( new UIText( 'CTRL+Z' ).setClass( 'key' ) );
 	undo.onClick( function () {
 
 		editor.undo();
@@ -39,6 +41,7 @@ function MenubarEdit( editor ) {
 	const redo = new UIRow();
 	redo.setClass( 'option' );
 	redo.setTextContent( strings.getKey( 'menubar/edit/redo' ) );
+	redo.add( new UIText( 'CTRL+SHIFT+Z' ).setClass( 'key' ) );
 	redo.onClick( function () {
 
 		editor.redo();
@@ -46,24 +49,7 @@ function MenubarEdit( editor ) {
 	} );
 	options.add( redo );
 
-	// Clear History
-
-	let option = new UIRow();
-	option.setClass( 'option' );
-	option.setTextContent( strings.getKey( 'menubar/edit/clear_history' ) );
-	option.onClick( function () {
-
-		if ( confirm( 'The Undo/Redo History will be cleared. Are you sure?' ) ) {
-
-			editor.history.clear();
-
-		}
-
-	} );
-	options.add( option );
-
-
-	editor.signals.historyChanged.add( function () {
+	function onHistoryChanged() {
 
 		const history = editor.history;
 
@@ -82,7 +68,10 @@ function MenubarEdit( editor ) {
 
 		}
 
-	} );
+	}
+
+	editor.signals.historyChanged.add( onHistoryChanged );
+	onHistoryChanged();
 
 	// ---
 
@@ -90,7 +79,7 @@ function MenubarEdit( editor ) {
 
 	// Center
 
-	option = new UIRow();
+	let option = new UIRow();
 	option.setClass( 'option' );
 	option.setTextContent( strings.getKey( 'menubar/edit/center' ) );
 	option.onClick( function () {
@@ -103,9 +92,9 @@ function MenubarEdit( editor ) {
 		const center = aabb.getCenter( new Vector3() );
 		const newPosition = new Vector3();
 
-		newPosition.x = object.position.x + ( object.position.x - center.x );
-		newPosition.y = object.position.y + ( object.position.y - center.y );
-		newPosition.z = object.position.z + ( object.position.z - center.z );
+		newPosition.x = object.position.x - center.x;
+		newPosition.y = object.position.y - center.y;
+		newPosition.z = object.position.z - center.z;
 
 		editor.execute( new SetPositionCommand( editor, object, newPosition ) );
 
@@ -123,7 +112,7 @@ function MenubarEdit( editor ) {
 
 		if ( object === null || object.parent === null ) return; // avoid cloning the camera or scene
 
-		object = object.clone();
+		object = clone( object );
 
 		editor.execute( new AddObjectCommand( editor, object ) );
 
@@ -135,6 +124,7 @@ function MenubarEdit( editor ) {
 	option = new UIRow();
 	option.setClass( 'option' );
 	option.setTextContent( strings.getKey( 'menubar/edit/delete' ) );
+	option.add( new UIText( 'DEL' ).setClass( 'key' ) );
 	option.onClick( function () {
 
 		const object = editor.selected;
@@ -147,71 +137,6 @@ function MenubarEdit( editor ) {
 
 	} );
 	options.add( option );
-
-	//
-
-	options.add( new UIHorizontalRule() );
-
-	// Set textures to sRGB. See #15903
-
-	option = new UIRow();
-	option.setClass( 'option' );
-	option.setTextContent( strings.getKey( 'menubar/edit/fixcolormaps' ) );
-	option.onClick( function () {
-
-		editor.scene.traverse( fixColorMap );
-
-	} );
-	options.add( option );
-
-	const colorMaps = [ 'map', 'envMap', 'emissiveMap' ];
-
-	function fixColorMap( obj ) {
-
-		const material = obj.material;
-
-		if ( material !== undefined ) {
-
-			if ( Array.isArray( material ) === true ) {
-
-				for ( let i = 0; i < material.length; i ++ ) {
-
-					fixMaterial( material[ i ] );
-
-				}
-
-			} else {
-
-				fixMaterial( material );
-
-			}
-
-			editor.signals.sceneGraphChanged.dispatch();
-
-		}
-
-	}
-
-	function fixMaterial( material ) {
-
-		let needsUpdate = material.needsUpdate;
-
-		for ( let i = 0; i < colorMaps.length; i ++ ) {
-
-			const map = material[ colorMaps[ i ] ];
-
-			if ( map ) {
-
-				map.encoding = THREE.sRGBEncoding;
-				needsUpdate = true;
-
-			}
-
-		}
-
-		material.needsUpdate = needsUpdate;
-
-	}
 
 	return container;
 

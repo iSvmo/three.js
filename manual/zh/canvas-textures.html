@@ -6,15 +6,11 @@
     <meta name="twitter:site" content="@threejs">
     <meta name="twitter:title" content="Three.js – Canvas Textures">
     <meta property="og:image" content="https://threejs.org/files/share.png">
-    <link rel="shortcut icon" href="/files/favicon_white.ico" media="(prefers-color-scheme: dark)">
-    <link rel="shortcut icon" href="/files/favicon.ico" media="(prefers-color-scheme: light)">
+    <link rel="shortcut icon" href="../../files/favicon_white.ico" media="(prefers-color-scheme: dark)">
+    <link rel="shortcut icon" href="../../files/favicon.ico" media="(prefers-color-scheme: light)">
 
-    <link rel="stylesheet" href="/manual/resources/lesson.css">
-    <link rel="stylesheet" href="/manual/resources/lang.css">
-<!-- Import maps polyfill -->
-<!-- Remove this when import maps will be widely supported -->
-<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-
+    <link rel="stylesheet" href="../resources/lesson.css">
+    <link rel="stylesheet" href="../resources/lang.css">
 <script type="importmap">
 {
   "imports": {
@@ -230,8 +226,8 @@ cubes.push(cube);  // 添加到cube list中方便旋转</pre>
 +makePerson(-0, 32, 'Green Machine', 'green');
 +makePerson(+3, 32, 'Red Menace', 'red');</pre>
           <p>剩下的就是添加 <a href="/docs/#examples/controls/OrbitControls"><code class="notranslate" translate="no">OrbitControls</code></a> 这样我们就可以移动相机了。</p>
-          <pre class="prettyprint showlinemods notranslate lang-js" translate="no">import * as THREE from '/build/three.module.js';
-+import {OrbitControls} from '/examples/jsm/controls/OrbitControls.js';</pre>
+          <pre class="prettyprint showlinemods notranslate lang-js" translate="no">import * as THREE from 'three';
++import {OrbitControls} from 'three/addons/controls/OrbitControls.js';</pre>
           <pre class="prettyprint showlinemods notranslate lang-js" translate="no">const fov = 75;
 const aspect = 2;  // Canvas默认值
 const near = 0.1;
@@ -362,13 +358,13 @@ function makePerson(x, labelWidth, size, name, color) {
             具体内容在 <a href="billboards.html">广告牌(Billboards)文章</a> 有覆盖到。</p>
           <p>特别是对于标签，<a href="align-html-elements-to-3d.html">另一种解决方案是使用HTML</a>，
             本文中的标签是 <em>位于3D场景中</em> ，如果你想要他们被其他对象遮挡是很好的，因为 <a href="align-html-elements-to-3d.html">HTML 标签</a> 总是在最上层。
-          </p>  
+          </p>
         </div>
       </div>
     </div>
-  
-  <script src="/manual/resources/prettify.js"></script>
-  <script src="/manual/resources/lesson.js"></script>
+
+  <script src="../resources/prettify.js"></script>
+  <script src="../resources/lesson.js"></script>
 
 
 

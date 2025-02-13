@@ -1,7 +1,9 @@
 import {
 	Matrix3,
 	Vector3,
-	Color
+	Color,
+	ColorManagement,
+	SRGBColorSpace
 } from 'three';
 
 /**
@@ -19,31 +21,17 @@ import {
 
 class PLYExporter {
 
-	parse( object, onDone, options ) {
-
-		if ( onDone && typeof onDone === 'object' ) {
-
-			console.warn( 'THREE.PLYExporter: The options parameter is now the third argument to the "parse" function. See the documentation for the new API.' );
-			options = onDone;
-			onDone = undefined;
-
-		}
+	parse( object, onDone, options = {} ) {
 
 		// Iterate over the valid meshes in the object
 		function traverseMeshes( cb ) {
 
 			object.traverse( function ( child ) {
 
-				if ( child.isMesh === true ) {
+				if ( child.isMesh === true || child.isPoints ) {
 
 					const mesh = child;
 					const geometry = mesh.geometry;
-
-					if ( geometry.isBufferGeometry !== true ) {
-
-						throw new Error( 'THREE.PLYExporter: Geometry is not of type THREE.BufferGeometry.' );
-
-					}
 
 					if ( geometry.hasAttribute( 'position' ) === true ) {
 
@@ -67,6 +55,7 @@ class PLYExporter {
 		options = Object.assign( defaultOptions, options );
 
 		const excludeAttributes = options.excludeAttributes;
+		let includeIndices = true;
 		let includeNormals = false;
 		let includeColors = false;
 		let includeUVs = false;
@@ -75,18 +64,13 @@ class PLYExporter {
 		// and cache the BufferGeometry
 		let vertexCount = 0;
 		let faceCount = 0;
+
 		object.traverse( function ( child ) {
 
 			if ( child.isMesh === true ) {
 
 				const mesh = child;
 				const geometry = mesh.geometry;
-
-				if ( geometry.isBufferGeometry !== true ) {
-
-					throw new Error( 'THREE.PLYExporter: Geometry is not of type THREE.BufferGeometry.' );
-
-				}
 
 				const vertices = geometry.getAttribute( 'position' );
 				const normals = geometry.getAttribute( 'normal' );
@@ -109,12 +93,29 @@ class PLYExporter {
 
 				if ( colors !== undefined ) includeColors = true;
 
+			} else if ( child.isPoints ) {
+
+				const mesh = child;
+				const geometry = mesh.geometry;
+
+				const vertices = geometry.getAttribute( 'position' );
+				const normals = geometry.getAttribute( 'normal' );
+				const colors = geometry.getAttribute( 'color' );
+
+				vertexCount += vertices.count;
+
+				if ( normals !== undefined ) includeNormals = true;
+
+				if ( colors !== undefined ) includeColors = true;
+
+				includeIndices = false;
+
 			}
 
 		} );
 
 		const tempColor = new Color();
-		const includeIndices = excludeAttributes.indexOf( 'index' ) === - 1;
+		includeIndices = includeIndices && excludeAttributes.indexOf( 'index' ) === - 1;
 		includeNormals = includeNormals && excludeAttributes.indexOf( 'normal' ) === - 1;
 		includeColors = includeColors && excludeAttributes.indexOf( 'color' ) === - 1;
 		includeUVs = includeUVs && excludeAttributes.indexOf( 'uv' ) === - 1;
@@ -123,7 +124,7 @@ class PLYExporter {
 		if ( includeIndices && faceCount !== Math.floor( faceCount ) ) {
 
 			// point cloud meshes will not have an index array and may not have a
-			// number of vertices that is divisble by 3 (and therefore representable
+			// number of vertices that is divisible by 3 (and therefore representable
 			// as triangles)
 			console.error(
 
@@ -205,7 +206,7 @@ class PLYExporter {
 			// 2 uv values at 4 bytes
 			const vertexListLength = vertexCount * ( 4 * 3 + ( includeNormals ? 4 * 3 : 0 ) + ( includeColors ? 3 : 0 ) + ( includeUVs ? 4 * 2 : 0 ) );
 
-			// 1 byte shape desciptor
+			// 1 byte shape descriptor
 			// 3 vertex indices at ${indexByteCount} bytes
 			const faceListLength = includeIndices ? faceCount * ( indexByteCount * 3 + 1 ) : 0;
 			const output = new DataView( new ArrayBuffer( headerBin.length + vertexListLength + faceListLength ) );
@@ -303,9 +304,9 @@ class PLYExporter {
 
 						if ( colors != null ) {
 
-							tempColor
-								.fromBufferAttribute( colors, i )
-								.convertLinearToSRGB();
+							tempColor.fromBufferAttribute( colors, i );
+
+							ColorManagement.fromWorkingColorSpace( tempColor, SRGBColorSpace );
 
 							output.setUint8( vOffset, Math.floor( tempColor.r * 255 ) );
 							vOffset += 1;
@@ -462,9 +463,9 @@ class PLYExporter {
 
 						if ( colors != null ) {
 
-							tempColor
-								.fromBufferAttribute( colors, i )
-								.convertLinearToSRGB();
+							tempColor.fromBufferAttribute( colors, i );
+
+							ColorManagement.fromWorkingColorSpace( tempColor, SRGBColorSpace );
 
 							line += ' ' +
 								Math.floor( tempColor.r * 255 ) + ' ' +
